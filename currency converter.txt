@@ -1,0 +1,81 @@
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Scanner;
+
+public class CurrencyConverter {
+
+    // Function to fetch exchange rates from the API
+    public static double getExchangeRate(String baseCurrency, String targetCurrency) {
+        try {
+            // API endpoint for fetching exchange rates
+            String apiUrl = "https://api.exchangerate-api.com/v4/latest/" + baseCurrency;
+            
+            // Establish connection to the API
+            HttpURLConnection connection = (HttpURLConnection) new URL(apiUrl).openConnection();
+            connection.setRequestMethod("GET");
+            connection.connect();
+            
+            // Read the response
+            Scanner scanner = new Scanner(connection.getInputStream());
+            StringBuilder response = new StringBuilder();
+            while (scanner.hasNext()) {
+                response.append(scanner.nextLine());
+            }
+            scanner.close();
+            
+            // Simple string-based parsing (Extracting the target currency rate)
+            String jsonResponse = response.toString();
+            String targetRateKey = "\"" + targetCurrency + "\":";
+            int targetRateStartIndex = jsonResponse.indexOf(targetRateKey) + targetRateKey.length();
+            int targetRateEndIndex = jsonResponse.indexOf(",", targetRateStartIndex);
+            if (targetRateEndIndex == -1) {
+                targetRateEndIndex = jsonResponse.indexOf("}", targetRateStartIndex);
+            }
+
+            String targetRateStr = jsonResponse.substring(targetRateStartIndex, targetRateEndIndex).trim();
+            return Double.parseDouble(targetRateStr);
+        } catch (Exception e) {
+            System.out.println("Error fetching exchange rate: " + e.getMessage());
+            return -1; // Return -1 in case of error
+        }
+    }
+
+    // Function to perform the currency conversion
+    public static double convertCurrency(double amount, double rate) {
+        return amount * rate;
+    }
+
+    // Main function for user interaction
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        
+        System.out.println("Welcome to the Currency Converter!");
+        
+        // Step 1: Get the base currency
+        System.out.print("Enter the base currency (e.g., USD, EUR, GBP): ");
+        String baseCurrency = scanner.next().toUpperCase();
+        
+        // Step 2: Get the target currency
+        System.out.print("Enter the target currency (e.g., USD, EUR, GBP): ");
+        String targetCurrency = scanner.next().toUpperCase();
+        
+        // Step 3: Fetch the exchange rate
+        double exchangeRate = getExchangeRate(baseCurrency, targetCurrency);
+        
+        if (exchangeRate != -1) {
+            // Step 4: Get the amount to convert
+            System.out.print("Enter the amount in " + baseCurrency + ": ");
+            double amount = scanner.nextDouble();
+            
+            // Step 5: Convert the currency
+            double convertedAmount = convertCurrency(amount, exchangeRate);
+            
+            // Step 6: Display the result
+            System.out.printf("%.2f %s is equal to %.2f %s\n", amount, baseCurrency, convertedAmount, targetCurrency);
+        } else {
+            System.out.println("Failed to retrieve exchange rate. Please try again.");
+        }
+        
+        scanner.close();
+    }
+}
