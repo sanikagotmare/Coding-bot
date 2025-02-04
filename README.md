@@ -1,4 +1,5 @@
 //Number game code in java
+
 import java.util.Scanner;
 import java.util.Random;
 
